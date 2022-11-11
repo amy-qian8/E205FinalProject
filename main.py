@@ -12,8 +12,9 @@ import os
 accel_data_all = pd.DataFrame()
 for file in os.listdir():
     if file.endswith('.csv'):
-        df = pd.read_csv(file).iloc[:, -1]
-        accel_data_all = pd.concat([accel_data_all, df], axis=1).dropna()
+        df = pd.read_csv(file).iloc[:, -1].dropna()
+        print(df)
+        accel_data_all = pd.concat([accel_data_all, df], axis=1)
 print('Done loading data.')
 
 # Compile all the accel data into one array, rename the column titles
@@ -29,8 +30,6 @@ def createPDFHistogram():
     combinedEnergyArr = np.array(accel_data_all.iloc[:, i[0]])
     combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, i[1]]), axis=0)
     combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, i[2]]), axis=0)
-    print(np.array(accel_data_all.iloc[:, i[2]]))
-    print(len(np.array(accel_data_all.iloc[:, i[2]])))
 
     plt.hist(combinedEnergyArr)
     # Plotting the PDF (probability density function) to the histogram
