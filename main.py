@@ -19,18 +19,15 @@ for file in os.listdir():
 print('Done loading data.')
 
 # Compile all the accel data into one array, rename the column titles
-accel_data_all.columns = ["Stationary Kaanthi", "Stationary Sidney", "Stationary Amy", "Walking Kaanthi", "Walking Sidney", "Walking Amy", "Running Kaanthi", "Running Sidney", "Running Amy"]
-# print(accel_data_all)
+accel_data_all.columns = ["Stationary Kaanthi", "Stationary Sidney", "Stationary Amy", "Walking Kaanthi", "Walking Sidney", "Walking Amy", "Running Kaanthi", "Running Sidney", "Running Amy", "Test Kaanthi", "Test Sidney", "Test Amy"]
 
-def createPDFHistogram():
-
+def createPDFHistogram(cols):
     # Plot the histogram for Stationary Kaanthi
     # i = range(len(accel_data_all.columns))
-    i = [6, 7, 8]
-    energyArr = np.array(accel_data_all.iloc[:, i])
-    combinedEnergyArr = np.array(accel_data_all.iloc[:, i[0]].dropna())
-    combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, i[1]].dropna()), axis=0)
-    combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, i[2]].dropna()), axis=0)
+    energyArr = np.array(accel_data_all.iloc[:, cols])
+    combinedEnergyArr = np.array(accel_data_all.iloc[:, cols[0]].dropna())
+    combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, cols[1]].dropna()), axis=0)
+    combinedEnergyArr = np.append(combinedEnergyArr, np.array(accel_data_all.iloc[:, cols[2]].dropna()), axis=0)
 
     # print("LEN combinedEnergyArr: ", len(combinedEnergyArr))
 
@@ -47,7 +44,8 @@ def createPDFHistogram():
     plt.xlabel("Energy [m/s]")
     plt.ylabel("Count of data points")
     plt.show()
-    return mu, std, combinedEnergyArr
+
+    return mu, std
 
 def plot3PDFs():
     mu = [16970, 16946, 19025]
@@ -61,5 +59,65 @@ def plot3PDFs():
     plt.plot(pdf2, 'k', linewidth=2)
     plt.show()
 
-createPDFHistogram()
-# plot3PDFs()
+def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
+    """Given the vehicle's prior state and current speed, what's the likelihood that the vehicle is stopped?"""
+    priorBelStat = 0.34  # The prior belief
+    priorBelWalk = 0.33  # The prior belief
+    priorBelJog = 0.33  # The prior belief
+
+    # S = stat, W = walk, J = jog
+
+    probStoS = 0.6
+    probStoW = 0.35
+    probStoJ = 0.05
+
+    probWtoS = 0.3
+    probWtoW = 0.6
+    probWtoJ = 0.1
+
+    probJtoS = 0.1
+    probJtoW = 0.4
+    probJtoJ = 0.5
+
+    belCorrectionStatNorm = [priorBelStat]
+    belCorrectionWalkNorm = [priorBelWalk]
+    belCorrectionJogNorm = [priorBelJog]
+
+    for e in testEnergy:
+        # PREDICTION STEP: Belief in each state
+        belPredictionStat = (probStoS * priorBelStat) + (probWtoS * priorBelWalk) + (probJtoS * priorBelJog)  # Prediction of being stat
+        belPredictionWalk = (probStoW * priorBelStat) + (probWtoW * priorBelWalk) + (probJtoW * priorBelJog)  # Prediction of being walk
+        belPredictionJog = (probStoJ * priorBelStat) + (probWtoJ * priorBelWalk) + (probJtoJ * priorBelJog)  # Prediction of being jog
+
+        # CORRECTION STEP: Belief in each state
+        numeratorStat = norm.pdf(e, statMU, statSTD) * belPredictionStat
+        numeratorWalk = norm.pdf(e, walkMU, walkSTD) * belPredictionWalk
+        numeratorJog = norm.pdf(e, jogMU, jogSTD) * belPredictionJog
+
+        normFactor = (numeratorStat + numeratorWalk + numeratorJog)
+        belCorrectionStatNorm.append(numeratorStat / normFactor)
+        belCorrectionWalkNorm.append(numeratorWalk / normFactor)
+        belCorrectionJogNorm.append(numeratorJog / normFactor)
+
+        priorBelStat = belCorrectionStatNorm[-1]  # update prior belief for next iteration
+        priorBelWalk = belCorrectionWalkNorm[-1]  # update prior belief for next iteration
+        priorBelJog = belCorrectionJogNorm[-1]  # update prior belief for next iteration
+
+    return belCorrectionStatNorm, belCorrectionWalkNorm, belCorrectionJogNorm
+
+def main():
+    statmu, statstd = createPDFHistogram([0, 1, 2]) #Stat
+    walkmu, walkstd = createPDFHistogram([3, 4, 5]) #Walk
+    jogmu, jogstd = createPDFHistogram([6, 7, 8]) #Jog
+
+    energyTestData = accel_data_all["Test Amy"].dropna().to_numpy()
+    print(energyTestData)
+
+    stat, walk, jog = bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
+    plt.plot(stat, label="stat")
+    plt.plot(walk, label="walk")
+    plt.plot(jog, label="jog")
+    plt.legend()
+    plt.show()
+
+main()
