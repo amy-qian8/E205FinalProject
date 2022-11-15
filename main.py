@@ -38,10 +38,18 @@ def createPDFHistogram(cols):
     pdf = norm.pdf(x, mu, std) * 10000  # note big scale factor
     plt.plot(x, pdf, 'k', linewidth=2)
     name = list(accel_data_all.columns)
-    state = "running"
+
+    # Setting the "state" variable so that the graph title and subtitle update dynamically
+    if cols == [0,1,2]:
+        state = "stationary"
+    elif cols == [3,4,5]:
+        state = "walking"
+    elif cols == [6,7,8]:
+        state = "running"
+
     plt.suptitle("Histogram of " + state + " Data" + " mu: " + str(round(mu)) + " std: " + str(round(std)), fontsize=12)
     plt.title("p(ei|xi = " + state + ")", fontsize=10)
-    plt.xlabel("Energy [m/s]")
+    plt.xlabel("Energy")
     plt.ylabel("Count of data points")
     plt.show()
 
@@ -105,6 +113,55 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
 
     return belCorrectionStatNorm, belCorrectionWalkNorm, belCorrectionJogNorm
 
+def getState(state, stat, walk, jog):
+    for i in range(len(state)):
+        if (stat[i] >= walk[i]) & (stat[i] >= jog[i]):
+            # state = 0 corresponds to stat
+            state[i] = 0
+        elif (walk[i] >= stat[i]) & (walk[i] >= jog[i]):
+            # state = 1 corresponds to walk
+            state[i] = 1
+        elif (jog[i] >= stat[i]) & (jog[i] >= walk[i]):
+            # state = 2 corresponds to jog
+            state[i] = 2
+        else:
+            # default to a 4th state (or should we default to stat?)
+            state[i] = 3
+    return state
+
+def getStateWithWindow(state, windowRadius, stat, walk, jog):
+    stateWithWindow = state
+
+    for i in range(len(stateWithWindow)):
+        if i > windowRadius and i < (len(stateWithWindow) - windowRadius):
+            if stateWithWindow[i-1] == stateWithWindow[i+1]:
+                stateWithWindow[i] = stateWithWindow[i-1]
+
+    # PREVIOUS TRIAL CODE THAT WORKS BUT DOESN'T YIELD DESIRED RESULT
+    # count = 0
+    # for i in range(len(stateWithWindow)):
+    #     if i > windowRadius:
+    #         count = 0
+    #         for j in range(windowRadius):
+    #             if stateWithWindow[i-1] == stateWithWindow[i-j-1]:
+    #                 count+=1
+    #         if count == windowRadius: # If the last N data points are all in the same state, then ...
+    #             stateWithWindow[i] = stateWithWindow[i-1]
+
+    return stateWithWindow
+
+def plotState(state, barHeight):
+    for i in range(len(state)):
+        if (state[i] == 0):
+            plt.scatter(i, barHeight, c = 'blue')
+        elif (state[i] == 1):
+            plt.scatter(i, barHeight, c = 'orange')
+        elif (state[i] == 2):
+            plt.scatter(i, barHeight, c = 'green')
+        # For testing
+        elif (state[i] == 3):
+            plt.scatter(i, barHeight, c = 'red')
+
 def main():
     statmu, statstd = createPDFHistogram([0, 1, 2]) #Stat
     walkmu, walkstd = createPDFHistogram([3, 4, 5]) #Walk
@@ -114,6 +171,15 @@ def main():
     print(energyTestData)
 
     stat, walk, jog = bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
+
+    emptyState = np.zeros(len(stat))
+    state = getState(emptyState, stat, walk, jog)
+    plotState(state, 1.2)
+
+    windowRadius = 2
+    stateWithWindow = getStateWithWindow(state, windowRadius, stat, walk, jog)
+    plotState(stateWithWindow, 1.1)
+
     plt.plot(stat, label="stat")
     plt.plot(walk, label="walk")
     plt.plot(jog, label="jog")
