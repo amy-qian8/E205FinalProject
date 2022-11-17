@@ -47,11 +47,11 @@ def createPDFHistogram(cols):
     elif cols == [6,7,8]:
         state = "running"
 
-    plt.suptitle("Histogram of " + state + " Data" + " mu: " + str(round(mu)) + " std: " + str(round(std)), fontsize=12)
-    plt.title("p(ei|xi = " + state + ")", fontsize=10)
-    plt.xlabel("Energy")
-    plt.ylabel("Count of data points")
-    plt.show()
+    # plt.suptitle("Histogram of " + state + " Data" + " mu: " + str(round(mu)) + " std: " + str(round(std)), fontsize=12)
+    # plt.title("p(ei|xi = " + state + ")", fontsize=10)
+    # plt.xlabel("Energy")
+    # plt.ylabel("Count of data points")
+    # plt.show()
 
     return mu, std
 
@@ -62,10 +62,10 @@ def plot3PDFs():
     pdf0 = norm.pdf(mu[0], std[0])
     pdf1 = norm.pdf(mu[1], std[1])
     pdf2 = norm.pdf(mu[2], std[2])
-    plt.plot(pdf0, 'k', linewidth=2)
-    plt.plot(pdf1, 'k', linewidth=2)
-    plt.plot(pdf2, 'k', linewidth=2)
-    plt.show()
+    # plt.plot(pdf0, 'k', linewidth=2)
+    # plt.plot(pdf1, 'k', linewidth=2)
+    # plt.plot(pdf2, 'k', linewidth=2)
+    # plt.show()
 
 def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
     """Given the vehicle's prior state and current speed, what's the likelihood that the vehicle is stopped?"""
@@ -150,40 +150,60 @@ def getStateWithWindow(state, windowRadius, stat, walk, jog):
 
     return stateWithWindow
 
-def plotState(state, barHeight):
+def plotState(axs, time, state, barHeight):
     for i in range(len(state)):
         if (state[i] == 0):
-            plt.scatter(i, barHeight, c = 'blue')
+            axs[1].scatter(time[i], barHeight, c = 'blue')
+            # plt.scatter(time[i], barHeight, c = 'blue')
         elif (state[i] == 1):
-            plt.scatter(i, barHeight, c = 'orange')
+            axs[1].scatter(time[i], barHeight, c = 'orange')
+            # plt.scatter(time[i], barHeight, c = 'orange')
         elif (state[i] == 2):
-            plt.scatter(i, barHeight, c = 'green')
+            axs[1].scatter(time[i], barHeight, c = 'green')
+            # plt.scatter(time[i], barHeight, c = 'green')
         # For testing
         elif (state[i] == 3):
-            plt.scatter(i, barHeight, c = 'red')
+            axs[1].scatter(time[i], barHeight, c = 'red')
+            # plt.scatter(time[i], barHeight, c = 'red')
 
 def main():
+    # Create the PDFs from the pre-collected data
     statmu, statstd = createPDFHistogram([0, 1, 2]) #Stat
     walkmu, walkstd = createPDFHistogram([3, 4, 5]) #Walk
     jogmu, jogstd = createPDFHistogram([6, 7, 8]) #Jog
 
+    # Import test data to analyze
     energyTestData = accel_data_all["Test Amy"].dropna().to_numpy()
-    print(energyTestData)
 
+    # Call Bayes Filter on the test data
     stat, walk, jog = bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
 
+    # Create figure with 2 subplots
+    fig, axs = plt.subplots(2, 1)
+
+    samplingRate = 1.4 #Hz
     emptyState = np.zeros(len(stat))
     state = getState(emptyState, stat, walk, jog)
-    plotState(state, 1.2)
+    time = np.linspace(0, (1/samplingRate) * len(state), num = len(state)) #start, stop, num
 
+    # Subplot 1: Plot the state probablity
+    axs[0].plot(time, stat, label="stat")
+    axs[0].plot(time, walk, label="walk")
+    axs[0].plot(time, jog, label="jog")
+    # axs[0].set_xlabel("Time [seconds]")
+    axs[0].set_ylabel("Probability")
+    axs[0].legend()
+
+    # Subplot 2: Plot the state (with and without window)
     windowRadius = 2
+    plotState(axs, time, state, 1.2)
     stateWithWindow = getStateWithWindow(state, windowRadius, stat, walk, jog)
-    plotState(stateWithWindow, 1.1)
+    plotState(axs, time, stateWithWindow, 1.1)
+    axs[1].set_xlabel("Time [seconds]")
+    axs[1].get_yaxis().set_visible(False)
+    axs[1].set_title("Top line is state without window, Bottom line is state with window")
 
-    plt.plot(stat, label="stat")
-    plt.plot(walk, label="walk")
-    plt.plot(jog, label="jog")
-    plt.legend()
+    fig.suptitle("Estimating state based on accel data using Bayes Filter")
     plt.show()
 
 main()
