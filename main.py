@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import os
 import serial
+import sys
 
 ser = serial.Serial('COM5')
 ser.flushInput()
@@ -55,7 +56,7 @@ def createPDFHistogram(cols):
     plt.title("p(ei|xi = " + state + ")", fontsize=10)
     plt.xlabel("Energy")
     plt.ylabel("Count of data points")
-    plt.show()
+    # plt.show()
 
     return mu, std
 
@@ -69,9 +70,9 @@ def plot3PDFs():
     plt.plot(pdf0, 'k', linewidth=2)
     plt.plot(pdf1, 'k', linewidth=2)
     plt.plot(pdf2, 'k', linewidth=2)
-    plt.show()
+    # plt.show()
 
-def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
+def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD):
     """Given the vehicle's prior state and current speed, what's the likelihood that the vehicle is stopped?"""
     priorBelStat = 0.34  # The prior belief
     priorBelWalk = 0.33  # The prior belief
@@ -95,7 +96,6 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
     belCorrectionWalkNorm = [priorBelWalk]
     belCorrectionJogNorm = [priorBelJog]
 
-    # for e in testEnergy:
     while True:
         ser_bytes = ser.readline()
         decoded_bytes = ser_bytes[0:len(ser_bytes)-2].decode("utf-8")
@@ -116,10 +116,6 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
         numeratorJog = norm.pdf(e, jogMU, jogSTD) * belPredictionJog
 
         normFactor = (numeratorStat + numeratorWalk + numeratorJog)
-        # belCorrectionStatNorm.append(numeratorStat / normFactor)
-        # belCorrectionWalkNorm.append(numeratorWalk / normFactor)
-        # belCorrectionJogNorm.append(numeratorJog / normFactor)
-
         statProb = numeratorStat / normFactor
         walkProb = numeratorWalk / normFactor
         jogProb = numeratorJog / normFactor
@@ -148,16 +144,20 @@ def getState(state, stat, walk, jog):
             state[i] = 3
     return state
 
+stateOverTime = []
 def printState(stat, walk, jog):
     if (stat >= walk) & (stat >= jog):
         # state = 0 corresponds to stat
         print("stationary")
+        stateOverTime.append(0)
     elif (walk >= stat) & (walk >= jog):
         # state = 1 corresponds to walk
         print("walk")
+        stateOverTime.append(1)
     elif (jog >= stat) & (jog >= walk):
         # state = 2 corresponds to jog
         print("jog")
+        stateOverTime.append(2)
     else:
         # default to a 4th state (or should we default to stat?)
         print("all equal")
@@ -201,23 +201,18 @@ def main():
     jogmu, jogstd = createPDFHistogram([6, 7, 8]) #Jog
 
     energyTestData = accel_data_all["Test Amy"].dropna().to_numpy()
-    # print(energyTestData)
 
-    bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
-
-    # emptyState = np.zeros(len(stat))
-    # state = getState(emptyState, stat, walk, jog)
-
-    # plotState(state, 1.2)
-
-    # windowRadius = 2
-    # stateWithWindow = getStateWithWindow(state, windowRadius, stat, walk, jog)
-    # plotState(stateWithWindow, 1.1)
-
-    # plt.plot(stat, label="stat")
-    # plt.plot(walk, label="walk")
-    # plt.plot(jog, label="jog")
-    # plt.legend()
-    # plt.show()
+    try:
+        bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd)
+    except KeyboardInterrupt:
+        y = np.arange(0,3,1)
+        y_ticks_labels = ['stationary','walking','jogging']
+        fig, ax = plt.subplots(1,1) 
+        ax.plot(stateOverTime)
+        # Set number of ticks for x-axis
+        ax.set_yticks(y)
+        # Set ticks labels for x-axis
+        ax.set_yticklabels(y_ticks_labels)
+        plt.show()
 
 main()
