@@ -60,17 +60,17 @@ def createPDFHistogram(cols):
 
     return mu, std
 
-def plot3PDFs():
-    mu = [16970, 16946, 19025]
-    std = [308, 2895, 10391]
+# def plot3PDFs():
+#     mu = [16970, 16946, 19025]
+#     std = [308, 2895, 10391]
 
-    pdf0 = norm.pdf(mu[0], std[0])
-    pdf1 = norm.pdf(mu[1], std[1])
-    pdf2 = norm.pdf(mu[2], std[2])
-    plt.plot(pdf0, 'k', linewidth=2)
-    plt.plot(pdf1, 'k', linewidth=2)
-    plt.plot(pdf2, 'k', linewidth=2)
-    # plt.show()
+#     pdf0 = norm.pdf(mu[0], std[0])
+#     pdf1 = norm.pdf(mu[1], std[1])
+#     pdf2 = norm.pdf(mu[2], std[2])
+#     plt.plot(pdf0, 'k', linewidth=2)
+#     plt.plot(pdf1, 'k', linewidth=2)
+#     plt.plot(pdf2, 'k', linewidth=2)
+#     plt.show()
 
 def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD):
     """Given the vehicle's prior state and current speed, what's the likelihood that the vehicle is stopped?"""
