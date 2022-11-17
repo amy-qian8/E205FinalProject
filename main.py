@@ -7,6 +7,10 @@ from scipy.stats import norm
 from matplotlib import pyplot as plt
 import pandas as pd
 import os
+import serial
+
+ser = serial.Serial('COM5')
+ser.flushInput()
 
 # Pulling Data from all CSV files into DataFrame
 accel_data_all = pd.DataFrame()
@@ -91,7 +95,16 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
     belCorrectionWalkNorm = [priorBelWalk]
     belCorrectionJogNorm = [priorBelJog]
 
-    for e in testEnergy:
+    # for e in testEnergy:
+    while True:
+        ser_bytes = ser.readline()
+        decoded_bytes = ser_bytes[0:len(ser_bytes)-2].decode("utf-8")
+        str_list = decoded_bytes.split(",")
+        output = [int(i) for i in str_list]
+        e = math.sqrt(output[0]**2 + output[1]**2 + output[2]**2)
+        print("acc: ", output)
+        print("e: ", e)
+
         # PREDICTION STEP: Belief in each state
         belPredictionStat = (probStoS * priorBelStat) + (probWtoS * priorBelWalk) + (probJtoS * priorBelJog)  # Prediction of being stat
         belPredictionWalk = (probStoW * priorBelStat) + (probWtoW * priorBelWalk) + (probJtoW * priorBelJog)  # Prediction of being walk
@@ -103,15 +116,21 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
         numeratorJog = norm.pdf(e, jogMU, jogSTD) * belPredictionJog
 
         normFactor = (numeratorStat + numeratorWalk + numeratorJog)
-        belCorrectionStatNorm.append(numeratorStat / normFactor)
-        belCorrectionWalkNorm.append(numeratorWalk / normFactor)
-        belCorrectionJogNorm.append(numeratorJog / normFactor)
+        # belCorrectionStatNorm.append(numeratorStat / normFactor)
+        # belCorrectionWalkNorm.append(numeratorWalk / normFactor)
+        # belCorrectionJogNorm.append(numeratorJog / normFactor)
+
+        statProb = numeratorStat / normFactor
+        walkProb = numeratorWalk / normFactor
+        jogProb = numeratorJog / normFactor
 
         priorBelStat = belCorrectionStatNorm[-1]  # update prior belief for next iteration
         priorBelWalk = belCorrectionWalkNorm[-1]  # update prior belief for next iteration
         priorBelJog = belCorrectionJogNorm[-1]  # update prior belief for next iteration
 
-    return belCorrectionStatNorm, belCorrectionWalkNorm, belCorrectionJogNorm
+        printState(statProb, walkProb, jogProb)
+
+    return statProb, walkProb, jogProb
 
 def getState(state, stat, walk, jog):
     for i in range(len(state)):
@@ -128,6 +147,20 @@ def getState(state, stat, walk, jog):
             # default to a 4th state (or should we default to stat?)
             state[i] = 3
     return state
+
+def printState(stat, walk, jog):
+    if (stat >= walk) & (stat >= jog):
+        # state = 0 corresponds to stat
+        print("stationary")
+    elif (walk >= stat) & (walk >= jog):
+        # state = 1 corresponds to walk
+        print("walk")
+    elif (jog >= stat) & (jog >= walk):
+        # state = 2 corresponds to jog
+        print("jog")
+    else:
+        # default to a 4th state (or should we default to stat?)
+        print("all equal")
 
 def getStateWithWindow(state, windowRadius, stat, walk, jog):
     stateWithWindow = state
@@ -168,22 +201,23 @@ def main():
     jogmu, jogstd = createPDFHistogram([6, 7, 8]) #Jog
 
     energyTestData = accel_data_all["Test Amy"].dropna().to_numpy()
-    print(energyTestData)
+    # print(energyTestData)
 
-    stat, walk, jog = bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
+    bayes_filter(statmu, statstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
 
-    emptyState = np.zeros(len(stat))
-    state = getState(emptyState, stat, walk, jog)
-    plotState(state, 1.2)
+    # emptyState = np.zeros(len(stat))
+    # state = getState(emptyState, stat, walk, jog)
 
-    windowRadius = 2
-    stateWithWindow = getStateWithWindow(state, windowRadius, stat, walk, jog)
-    plotState(stateWithWindow, 1.1)
+    # plotState(state, 1.2)
 
-    plt.plot(stat, label="stat")
-    plt.plot(walk, label="walk")
-    plt.plot(jog, label="jog")
-    plt.legend()
-    plt.show()
+    # windowRadius = 2
+    # stateWithWindow = getStateWithWindow(state, windowRadius, stat, walk, jog)
+    # plotState(stateWithWindow, 1.1)
+
+    # plt.plot(stat, label="stat")
+    # plt.plot(walk, label="walk")
+    # plt.plot(jog, label="jog")
+    # plt.legend()
+    # plt.show()
 
 main()
