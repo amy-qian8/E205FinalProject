@@ -9,6 +9,9 @@ import pandas as pd
 import os
 import serial
 
+ser = serial.Serial('COM5')
+ser.flushInput()
+
 # Pulling Data from all CSV files into DataFrame
 accel_data_all = pd.DataFrame()
 for file in os.listdir():
@@ -115,8 +118,8 @@ def bayes_filter(statMU, statSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
         priorBelJog = belCorrectionJogNorm[-1]  # update prior belief for next iteration
 
     return belCorrectionStatNorm, belCorrectionWalkNorm, belCorrectionJogNorm
-
-def bayes_filter4(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
+    
+def bayes_filter4(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD):
     """Given the vehicle's prior state and current speed, what's the likelihood that the vehicle is stopped?"""
     priorBelStat = 0.25  # The prior belief
     priorBelLying = 0.25  # The prior belief
@@ -264,8 +267,8 @@ def main():
     try:
         bayes_filter4(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd)
     except KeyboardInterrupt:
-        y = np.arange(0, 3, 1)
-        y_ticks_labels = ['stationary', 'walking', 'jogging']
+        y = np.arange(0, 4, 1)
+        y_ticks_labels = ['stationary', 'lying down', 'walking', 'jogging']
         fig, ax = plt.subplots(1, 1)
         ax.plot(stateOverTime)
         # Set number of ticks for x-axis
