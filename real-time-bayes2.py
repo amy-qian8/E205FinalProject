@@ -7,6 +7,7 @@ from scipy.stats import norm
 from matplotlib import pyplot as plt
 import pandas as pd
 import os
+import serial
 
 # Pulling Data from all CSV files into DataFrame
 accel_data_all = pd.DataFrame()
@@ -149,7 +150,13 @@ def bayes_filter4(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jo
     belCorrectionWalkNorm = [priorBelWalk]
     belCorrectionJogNorm = [priorBelJog]
 
-    for e in testEnergy:
+    while True:
+        ser_bytes = ser.readline()
+        decoded_bytes = ser_bytes[0:len(ser_bytes)-2].decode("utf-8")
+        str_list = decoded_bytes.split(",")
+        output = [int(i) for i in str_list]
+        e = math.sqrt(output[0]**2 + output[1]**2 + output[2]**2)
+
         # PREDICTION STEP: Belief in each state
         belPredictionStat = (probStoS * priorBelStat) + (probLtoS * priorBelLying) + (probWtoS * priorBelWalk) + (probJtoS * priorBelJog)  # Prediction of being stat
         belPredictionLying = (probStoL * priorBelStat) + (probLtoL * priorBelLying) + (probWtoL * priorBelWalk) + (probJtoL * priorBelJog)  # Prediction of being stat
@@ -163,17 +170,37 @@ def bayes_filter4(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jo
         numeratorJog = norm.pdf(e, jogMU, jogSTD) * belPredictionJog
 
         normFactor = (numeratorStat + numeratorLying + numeratorWalk + numeratorJog)
-        belCorrectionStatNorm.append(numeratorStat / normFactor)
-        belCorrectionLyingNorm.append(numeratorLying / normFactor)
-        belCorrectionWalkNorm.append(numeratorWalk / normFactor)
-        belCorrectionJogNorm.append(numeratorJog / normFactor)
+        statProb = numeratorStat / normFactor
+        lyingProb = numeratorLying / normFactor
+        walkProb = numeratorWalk / normFactor
+        jogProb = numeratorJog / normFactor
 
         priorBelStat = belCorrectionStatNorm[-1]  # update prior belief for next iteration
         priorBelLying = belCorrectionLyingNorm[-1]  # update prior belief for next iteration
         priorBelWalk = belCorrectionWalkNorm[-1]  # update prior belief for next iteration
         priorBelJog = belCorrectionJogNorm[-1]  # update prior belief for next iteration
 
+        printState(statProb, lyingProb, walkProb, jogProb)
+
     return belCorrectionStatNorm, belCorrectionLyingNorm, belCorrectionWalkNorm, belCorrectionJogNorm
+
+stateOverTime = []
+def printState(stat, lying, walk, jog):
+    if max(stat, lying, walk, jog) == stat:
+        print("sitting")
+        stateOverTime.append(0)
+    elif max(stat, lying, walk, jog) == lying:
+        print("lying")
+        stateOverTime.append(1)
+    elif max(stat, lying, walk, jog) == walk:
+        print("walk")
+        stateOverTime.append(2)
+    elif max(stat, lying, walk, jog) == jog:
+        print("jog")
+        stateOverTime.append(3)
+    else:
+        print("all equal")
+        stateOverTime.append(0)
 
 def getState(state, stat, lying, walk, jog):
     for i in range(len(state)):
@@ -230,43 +257,21 @@ def plotState(axs, time, state, barHeight):
 def main():
     # Create the PDFs from the pre-collected data
     statmu, statstd = createPDFHistogram(0) #Stat
-    lyingmu, lyingstd = createPDFHistogram(1)  # Stat
+    lyingmu, lyingstd = createPDFHistogram(1)  # Lying
     walkmu, walkstd = createPDFHistogram(2) #Walk
     jogmu, jogstd = createPDFHistogram(3) #Jog
 
-    # Import test data to analyze
-    energyTestData = accel_data_all["Testing 3"].dropna().to_numpy()
-
-    # Call Bayes Filter on the test data
-    stat, lying, walk, jog = bayes_filter4(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, energyTestData)
-
-    # Create figure with 2 subplots
-    fig, axs = plt.subplots(2, 1)
-
-    samplingRate = 1.4 #Hz
-    emptyState = np.zeros(len(stat))
-    state = getState(emptyState, stat, lying, walk, jog)
-    time = np.linspace(0, (1/samplingRate) * len(state), num = len(state)) #start, stop, num
-
-    # Subplot 1: Plot the state probablity
-    axs[0].plot(time, stat, label="stat")
-    axs[0].plot(time, lying, label="lying")
-    axs[0].plot(time, walk, label="walk")
-    axs[0].plot(time, jog, label="jog")
-    # axs[0].set_xlabel("Time [seconds]")
-    axs[0].set_ylabel("Probability")
-    axs[0].legend()
-
-    # Subplot 2: Plot the state (with and without window)
-    windowRadius = 2
-    plotState(axs, time, state, 1.2)
-    stateWithWindow = getStateWithWindow(state, windowRadius)
-    plotState(axs, time, stateWithWindow, 1.1)
-    axs[1].set_xlabel("Time [seconds]")
-    axs[1].get_yaxis().set_visible(False)
-    axs[1].set_title("Top line is state without window, Bottom line is state with window")
-
-    fig.suptitle("Estimating state based on accel data using Bayes Filter")
-    plt.show()
+    try:
+        bayes_filter4(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd)
+    except KeyboardInterrupt:
+        y = np.arange(0, 3, 1)
+        y_ticks_labels = ['stationary', 'walking', 'jogging']
+        fig, ax = plt.subplots(1, 1)
+        ax.plot(stateOverTime)
+        # Set number of ticks for x-axis
+        ax.set_yticks(y)
+        # Set ticks labels for x-axis
+        ax.set_yticklabels(y_ticks_labels)
+        plt.show()
 
 main()
