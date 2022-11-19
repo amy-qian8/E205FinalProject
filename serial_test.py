@@ -8,4 +8,5 @@ while True:
     decoded_bytes = ser_bytes[0:len(ser_bytes)-2].decode("utf-8")
     str_list = decoded_bytes.split(",")
     output = [int(i) for i in str_list]
-    print(output)
+    print(str(output)[1:-1])
+    
