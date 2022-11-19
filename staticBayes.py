@@ -4,6 +4,12 @@ from matplotlib import pyplot as plt
 from constants import *
 
 def staticBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD, testEnergy):
+    # Initial Belief
+    priorBelStat = 0.25
+    priorBelLying = 0.25
+    priorBelWalk = 0.25
+    priorBelJog = 0.25
+    
     belCorrectionStatNorm = [priorBelStat]
     belCorrectionLyingNorm = [priorBelLying]
     belCorrectionWalkNorm = [priorBelWalk]

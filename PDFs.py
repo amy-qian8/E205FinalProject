@@ -34,14 +34,14 @@ def createPDFHistogram(state, accel_data_all):
         cols = 3
 
     energy = np.array(accel_data_all.iloc[:, cols].dropna())
-
-    plt.hist(energy)
+    
     mu, std = norm.fit(energy)
 
     return mu, std
 
 def plotPDF(mu, std, energy, state):
     # Plotting the PDF (probability density function) to the histogram
+    plt.hist(energy)
     x = np.linspace(min(energy), max(energy), 100)
     pdf = norm.pdf(x, mu, std) * 10000  # note big scale factor
     plt.plot(x, pdf, 'k', linewidth=2)

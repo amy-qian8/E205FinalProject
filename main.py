@@ -12,7 +12,7 @@ def main():
     jogmu, jogstd = PDFs.createPDFHistogram("jog", accel_data_all)
 
     # Choose with type of 4 state Bayes filter (static or realtime)
-    static = True
+    static = False
     if static:
         testData = accel_data_all["Testing 3"].dropna().to_numpy()
         staticBayes.staticBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, testData)

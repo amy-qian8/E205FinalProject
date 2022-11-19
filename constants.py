@@ -1,9 +1,3 @@
-# Initial Belief
-priorBelStat = 0.25
-priorBelLying = 0.25
-priorBelWalk = 0.25
-priorBelJog = 0.25
-
 # Transition Prob Matrix
 probStoS = 0.6
 probStoL = 0.25

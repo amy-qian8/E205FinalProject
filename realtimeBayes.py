@@ -6,10 +6,16 @@ import serial
 
 from constants import *
 
-ser = serial.Serial('COM7')
+ser = serial.Serial('COM5')
 ser.flushInput()
 
 def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD):
+    # Initial Belief
+    priorBelStat = 0.25
+    priorBelLying = 0.25
+    priorBelWalk = 0.25
+    priorBelJog = 0.25
+    
     belCorrectionStatNorm = [priorBelStat]
     belCorrectionLyingNorm = [priorBelLying]
     belCorrectionWalkNorm = [priorBelWalk]
