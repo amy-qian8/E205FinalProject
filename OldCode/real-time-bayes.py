@@ -1,16 +1,12 @@
-import csv
 import math
-import random
 import numpy as np
-from scipy import stats
 from scipy.stats import norm
 from matplotlib import pyplot as plt
 import pandas as pd
 import os
 import serial
-import sys
 
-ser = serial.Serial('COM5')
+ser = serial.Serial('COM7')
 ser.flushInput()
 
 # Pulling Data from all CSV files into DataFrame

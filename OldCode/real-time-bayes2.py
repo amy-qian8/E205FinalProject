@@ -1,6 +1,4 @@
-import csv
 import math
-import random
 import numpy as np
 from scipy import stats
 from scipy.stats import norm
