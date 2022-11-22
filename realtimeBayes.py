@@ -6,10 +6,11 @@ import serial
 
 from constants import *
 
-ser = serial.Serial('COM5')
-ser.flushInput()
-
-def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD):
+sitOverTime = []
+lyingOverTime = []
+walkOverTime = []
+jogOverTime = []
+def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jogSTD, ser):
     # Initial Belief
     priorBelStat = 0.25
     priorBelLying = 0.25
@@ -51,6 +52,10 @@ def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jo
         priorBelWalk = belCorrectionWalkNorm[-1]  # update prior belief for next iteration
         priorBelJog = belCorrectionJogNorm[-1]  # update prior belief for next iteration
 
+        sitOverTime.append(statProb)
+        lyingOverTime.append(lyingProb)
+        walkOverTime.append(walkProb)
+        jogOverTime.append(jogProb)
         printState(statProb, lyingProb, walkProb, jogProb)
 
 stateOverTime = []
@@ -71,16 +76,27 @@ def printState(stat, lying, walk, jog):
         print("all equal")
         stateOverTime.append(0)
 
-def realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd):
+def realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, ser):
     try:
-        realtimeBayes(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd)
+        realtimeBayes(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, ser)
     except KeyboardInterrupt:
         y = np.arange(0, 4, 1)
         y_ticks_labels = ['stationary', 'lying down', 'walking', 'jogging']
         fig, ax = plt.subplots(1, 1)
-        ax.plot(stateOverTime)
+        ax.plot(sitOverTime, label = 'sitting')
+        ax.plot(lyingOverTime, label = 'lying down')
+        ax.plot(walkOverTime, label = 'walking')
+        ax.plot(jogOverTime, label = 'jogging')
+
+        samplingRate = 1.4
+        time = np.linspace(0, (1/samplingRate) * len(sitOverTime), num = len(sitOverTime))
+
+        ax.set_ylabel("Probability")
+        ax.set_xlabel("Time (seconds)")
+        ax.legend()
         # Set number of ticks for x-axis
-        ax.set_yticks(y)
+        # ax.set_yticks(y)
         # Set ticks labels for x-axis
-        ax.set_yticklabels(y_ticks_labels)
+        # ax.set_yticklabels(y_ticks_labels)
+
         plt.show()

@@ -2,6 +2,7 @@ import PDFs
 import staticBayes
 import realtimeBayes
 from constants import *
+import serial
 
 def main():
     # Import data and create 4 PDFs using calibration data
@@ -14,9 +15,11 @@ def main():
     # Choose with type of 4 state Bayes filter (static or realtime)
     static = False
     if static:
-        testData = accel_data_all["Testing 3"].dropna().to_numpy()
+        testData = accel_data_all["Testing 1"].dropna().to_numpy()
         staticBayes.staticBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, testData)
     else:
-        realtimeBayes.realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd)
+        ser = serial.Serial('COM5')
+        ser.flushInput()
+        realtimeBayes.realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, ser)
 
 main()
