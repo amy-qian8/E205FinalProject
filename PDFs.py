@@ -36,6 +36,7 @@ def createPDFHistogram(state, accel_data_all):
     energy = np.array(accel_data_all.iloc[:, cols].dropna())
     
     mu, std = norm.fit(energy)
+    # plotPDF(mu, std, energy, state)
 
     return mu, std
 

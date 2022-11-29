@@ -2,7 +2,10 @@ import math
 import numpy as np
 from scipy.stats import norm
 from matplotlib import pyplot as plt
-import serial
+from termcolor import colored
+import os
+
+os.system('color')
 
 from constants import *
 
@@ -61,16 +64,16 @@ def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jo
 stateOverTime = []
 def printState(stat, lying, walk, jog):
     if max(stat, lying, walk, jog) == stat:
-        print("sitting")
+        print(colored("stationary",'blue'))
         stateOverTime.append(0)
     elif max(stat, lying, walk, jog) == lying:
-        print("lying")
+        print(colored("lying", 'yellow'))
         stateOverTime.append(1)
     elif max(stat, lying, walk, jog) == walk:
-        print("walk")
+        print(colored("walk", 'green'))
         stateOverTime.append(2)
     elif max(stat, lying, walk, jog) == jog:
-        print("jog")
+        print(colored("jog", 'red'))
         stateOverTime.append(3)
     else:
         print("all equal")
@@ -83,7 +86,7 @@ def realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jo
         y = np.arange(0, 4, 1)
         y_ticks_labels = ['stationary', 'lying down', 'walking', 'jogging']
         fig, ax = plt.subplots(1, 1)
-        ax.plot(sitOverTime, label = 'sitting')
+        ax.plot(sitOverTime, label = 'stationary')
         ax.plot(lyingOverTime, label = 'lying down')
         ax.plot(walkOverTime, label = 'walking')
         ax.plot(jogOverTime, label = 'jogging')
