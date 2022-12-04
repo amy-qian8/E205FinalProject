@@ -86,7 +86,7 @@ def realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jo
         y = np.arange(0, 4, 1)
         y_ticks_labels = ['stationary', 'lying down', 'walking', 'jogging']
         fig, ax = plt.subplots(1, 1)
-        ax.plot(sitOverTime, label = 'stationary')
+        ax.plot(sitOverTime, label = 'sitting')
         ax.plot(lyingOverTime, label = 'lying down')
         ax.plot(walkOverTime, label = 'walking')
         ax.plot(jogOverTime, label = 'jogging')
@@ -97,9 +97,7 @@ def realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jo
         ax.set_ylabel("Probability")
         ax.set_xlabel("Time (seconds)")
         ax.legend()
-        # Set number of ticks for x-axis
-        # ax.set_yticks(y)
-        # Set ticks labels for x-axis
-        # ax.set_yticklabels(y_ticks_labels)
+
+        print(stateOverTime)
 
         plt.show()

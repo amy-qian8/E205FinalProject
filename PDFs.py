@@ -58,7 +58,7 @@ def plotPDF(mu, std, energy, state):
     plt.show()
 
 def plot4PDFs(accel_data_all):
-    states = ['stationary', 'lying down', 'walking', 'jogging']
+    states = ['sitting', 'lying down', 'walking', 'jogging']
     plt.figure()
     for i in range(0,4):
         energy = np.array(accel_data_all.iloc[:, i].dropna())
@@ -68,4 +68,6 @@ def plot4PDFs(accel_data_all):
         pdf = norm.pdf(x, mu, std)
         plt.plot(x, pdf, label = states[i])
     plt.legend()
+    plt.xlabel('Energy')
+    plt.ylabel('Probability')
     plt.show()
