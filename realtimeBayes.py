@@ -64,7 +64,7 @@ def realtimeBayes(statMU, statSTD, lyingMU, lyingSTD, walkMU, walkSTD, jogMU, jo
 stateOverTime = []
 def printState(stat, lying, walk, jog):
     if max(stat, lying, walk, jog) == stat:
-        print(colored("stationary",'blue'))
+        print(colored("sitting",'blue'))
         stateOverTime.append(0)
     elif max(stat, lying, walk, jog) == lying:
         print(colored("lying", 'yellow'))
