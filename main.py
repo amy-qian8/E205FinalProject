@@ -18,23 +18,23 @@ def addState(sec, state):
         arr.append(state)
     return arr
 
-def ground_truth(seconds):
+def ground_truth(states, seconds):
     arr = []
-    states = [0, 2, 1, 2, 3, 2, 0, 1]
-    for i in range(0, 8):
+    # states = [0, 2, 1, 2, 3, 2, 0, 1]
+    for i in range(0, len(states)):
         arr = arr + addState(seconds[i], states[i])
     return arr
 
-def determine_error(sec, trial):
-    truth = ground_truth(sec)
+def determine_error(states, sec, trial):
+    truth = ground_truth(states, sec)
     correct = 0
     for i in range(0, len(truth)):
         if truth[i] == trial[i]:
             correct+=1
     print(correct/len(truth))
-    plt.plot(truth)
-    plt.plot(trial)
-    plt.show()
+    # plt.plot(truth)
+    # plt.plot(trial)
+    # plt.show()
 
 def main():
     # Import data and create 4 PDFs using calibration data
@@ -55,4 +55,10 @@ def main():
         realtimeBayes.realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, ser)
 
 # main()
-determine_error(kaanthi_dec4_trial_sec, kaanthi_dec4_trial)
+start = 0
+delta = 28
+states = [[0], [2], [1], [2], [3], [2], [0], [1]]
+for i in range(0,8):
+    print(states[i])
+    determine_error(states[i], [20], amy_dec4_trial[start:start+delta]) # sitting
+    start = start + delta
