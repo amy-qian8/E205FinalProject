@@ -27,6 +27,7 @@ def ground_truth(states, seconds):
 
 def determine_error(states, sec, trial):
     truth = ground_truth(states, sec)
+    print("truth", truth)
     correct = 0
     for i in range(0, len(truth)):
         if truth[i] == trial[i]:
@@ -54,11 +55,15 @@ def main():
         ser.flushInput()
         realtimeBayes.realtimeBayesWrapper(statmu, statstd, lyingmu, lyingstd, walkmu, walkstd, jogmu, jogstd, ser)
 
-# main()
-start = 0
-delta = 28
-states = [[0], [2], [1], [2], [3], [2], [0], [1]]
-for i in range(0,8):
-    print(states[i])
-    determine_error(states[i], [20], amy_dec4_trial[start:start+delta]) # sitting
-    start = start + delta
+main()
+
+# error determination by state
+# start = 0
+# states = [[0], [2], [1], [2], [3], [2], [0], [1]]
+# seconds = [[20], [24], [16], [20], [20], [22], [18], [20]]
+# for i in range(0,8):
+#     delta = int(14*(seconds[i][0]/10))
+#     print("state", states[i])
+#     print("trial", kaanthi_dec4_trial[start:start+delta])
+#     determine_error(states[i], seconds[i], kaanthi_dec4_trial[start:start+delta])
+#     start = start + delta
